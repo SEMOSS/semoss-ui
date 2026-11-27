@@ -33,14 +33,17 @@ import {
 	type AutomationTraceSnapshot,
 	AutomationWorkbenchContext,
 	type AutomationWorkbenchContextValue,
+	getVisibleRun,
 	type N8nImportConversionInput,
 	type N8nImportConversionResult,
+	type PptxShapeSelection,
 } from "@semoss/automation";
 import {
 	FILE_PANEL_COMPONENTS,
 	FILE_PANEL_EVENTS,
 	type FileSavedEvent,
 	getFilePanelScope,
+	type PptxShapeSelectedPayload,
 } from "@semoss/panels";
 import { type Role, runPixel } from "@semoss/sdk";
 import { Session, useInsight } from "@semoss/sdk/react";
@@ -101,6 +104,7 @@ import {
 import { AUTOMATION_RUN_FILES_PANEL } from "./automation-run-files-panel";
 import { AutomationSettingsPanel } from "./automation-settings-panel";
 import { AutomationSettingsToggle } from "./automation-settings-toggle";
+import { usePickPptxShapes } from "./use-pick-pptx-shapes";
 
 const AUTOMATION_MUTATION_TOOLS = new Set([
 	"AddAutomationStep",
@@ -640,6 +644,9 @@ export const AutomationWorkbench = observer(
 			/** Source the dialog opened with, so dismissing without an edit changes nothing. */
 			openedWith: string;
 		} | null>(null);
+		const [pptxShapeSelection, setPptxShapeSelection] =
+			useState<PptxShapeSelection | null>(null);
+		const pptxShapeTokenRef = useRef(0);
 		const wasRunningRef = useRef(false);
 		const inspectorSelectionRef = useRef<string | null>(null);
 		// Which node a Python-node file tab's path belongs to, so a save of it
@@ -797,6 +804,15 @@ export const AutomationWorkbench = observer(
 			[appId, layoutActions],
 		);
 
+		const handlePickShapes = usePickPptxShapes({
+			appId,
+			runInsightId:
+				getVisibleRun(traceSnapshot, selectedRun)?.executionInsightId ??
+				undefined,
+			inspectorPanelType: INSPECTOR,
+			layout: layoutActions,
+		});
+
 		// A save from the file-editor tab writes straight to the asset, bypassing
 		// the canvas's in-memory step entirely — mirror it back in so a later
 		// canvas Save can't clobber the file with the stale copy it loaded with.
@@ -821,6 +837,18 @@ export const AutomationWorkbench = observer(
 						canvasRef.current?.syncPythonSource(nodeId, content);
 					}
 				})();
+			},
+		);
+
+		useWorkbenchEvent<PptxShapeSelectedPayload>(
+			FILE_PANEL_EVENTS.PPTX_SHAPE_SELECTED,
+			(payload) => {
+				pptxShapeTokenRef.current += 1;
+				setPptxShapeSelection({
+					shapeName: payload.shapeName,
+					shapeType: payload.shapeType,
+					token: pptxShapeTokenRef.current,
+				});
 			},
 		);
 
@@ -851,6 +879,8 @@ export const AutomationWorkbench = observer(
 				onViewRunDetails: handleViewRunDetails,
 				runDetailsFocusNodeId: runDetailsFocus?.nodeId ?? null,
 				runDetailsFocusToken: runDetailsFocus?.token ?? 0,
+				pptxShapeSelection,
+				onPickShapes: handlePickShapes,
 			}),
 			[
 				appId,
@@ -861,6 +891,7 @@ export const AutomationWorkbench = observer(
 				handleExitHistoricalView,
 				handleInspectorChange,
 				handleOpenPythonEditor,
+				handlePickShapes,
 				handleRunsChange,
 				handleTraceChange,
 				handleViewRunDetails,
@@ -870,6 +901,7 @@ export const AutomationWorkbench = observer(
 				isPythonFileOpen,
 				activeRuns,
 				followedRunId,
+				pptxShapeSelection,
 				readOnly,
 				runDetailsFocus,
 				selectedRun,

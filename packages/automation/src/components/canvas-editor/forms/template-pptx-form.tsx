@@ -1,0 +1,486 @@
+import { MousePointerClick, Plus, Trash2 } from "lucide-react";
+import { useContext, useEffect, useRef, useState } from "react";
+import {
+	Button,
+	Field,
+	FieldDescription,
+	FieldLabel,
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
+import type {
+	PptxChartSeries,
+	TemplatePptxConfig,
+	TemplatePptxReplacement,
+} from "../../../domain/automation-workflow.types";
+import { PptxPickContext } from "../pptx-pick-context";
+import { BoundInput } from "./pill-input";
+import { PptxTemplateSelect } from "./pptx-template-select";
+
+export interface PptxShapePayload {
+	shapeName: string;
+	shapeType: string;
+}
+
+export interface TemplatePptxFormProps {
+	config: TemplatePptxConfig;
+	upstreamVars: string[];
+	onChange: (c: TemplatePptxConfig) => void;
+	/** The automation's project, whose assets are searched for templates. */
+	appId?: string;
+	readOnly?: boolean;
+}
+
+function deriveReplacementType(
+	shapeType: string,
+): TemplatePptxReplacement["type"] {
+	const t = shapeType.toLowerCase();
+	if (t.includes("image") || t.includes("picture")) return "image";
+	if (t.includes("chart")) return "chart";
+	return "text";
+}
+
+function makeDefaultReplacement(
+	shapeName: string,
+	type: TemplatePptxReplacement["type"],
+): TemplatePptxReplacement {
+	if (type === "chart") {
+		return { shapeName, type: "chart", categories: [], series: [] };
+	}
+	return { shapeName, type, value: "" };
+}
+
+/** Serializes one replacement into the pixel payload object. */
+function serializeReplacement(r: TemplatePptxReplacement): object {
+	if (r.type === "chart") {
+		return {
+			type: "chart",
+			categories: r.categories,
+			series: r.series,
+		};
+	}
+	return { type: r.type, value: r.value };
+}
+
+/** Builds the TemplatePPTX pixel string for preview. */
+function buildPixelPreview(config: TemplatePptxConfig): string {
+	if (!config.templateFile) return "";
+	const payload: Record<string, object> = {};
+	for (const r of config.replacements) {
+		payload[r.shapeName] = serializeReplacement(r);
+	}
+	const payloadJson = JSON.stringify(payload, null, 2);
+	const fileName = config.outputFileName?.trim() || "output";
+	return `TemplatePPTX(template_file=["${config.templateFile}"], payload=["<encode>${payloadJson}</encode>"], fileName=["${fileName}"]);`;
+}
+
+// ---------------------------------------------------------------------------
+// Chart sub-editor
+// ---------------------------------------------------------------------------
+
+let nextSeriesKey = 0;
+
+interface ChartEditorProps {
+	categories: string[] | string;
+	series: PptxChartSeries[];
+	readOnly: boolean;
+	upstreamVars: string[];
+	onCategoriesChange: (cats: string[] | string) => void;
+	onSeriesChange: (series: PptxChartSeries[]) => void;
+}
+
+/** Returns true when the value is an exact variable reference like ${foo.bar}. */
+function isVarRef(value: string): boolean {
+	return /^\$\{[^}]+\}$/.test(value.trim());
+}
+
+/** Serializes categories for display in the plain comma input (non-ref path). */
+function categoriesToString(cats: string[] | string): string {
+	if (typeof cats === "string") return cats;
+	return cats.join(", ");
+}
+
+/** Serializes series values for display in the plain comma input (non-ref path). */
+function valuesToString(values: number[] | string): string {
+	if (typeof values === "string") return values;
+	return values.join(", ");
+}
+
+function ChartEditor({
+	categories,
+	series,
+	readOnly,
+	upstreamVars,
+	onCategoriesChange,
+	onSeriesChange,
+}: ChartEditorProps) {
+	const seriesKeysRef = useRef<string[]>([]);
+	while (seriesKeysRef.current.length < series.length) {
+		seriesKeysRef.current.push(`series-${nextSeriesKey++}`);
+	}
+	seriesKeysRef.current.length = series.length;
+
+	const categoriesIsRef =
+		typeof categories === "string" && isVarRef(categories);
+
+	const addSeries = () => {
+		onSeriesChange([...series, { name: "", values: [] }]);
+	};
+
+	const removeSeries = (idx: number) => {
+		seriesKeysRef.current = seriesKeysRef.current.filter(
+			(_, i) => i !== idx,
+		);
+		onSeriesChange(series.filter((_, i) => i !== idx));
+	};
+
+	const updateSeriesName = (idx: number, name: string) => {
+		onSeriesChange(series.map((s, i) => (i === idx ? { ...s, name } : s)));
+	};
+
+	const updateSeriesValues = (idx: number, raw: string) => {
+		// Keep as a variable reference string; otherwise parse as numbers.
+		const next: number[] | string = isVarRef(raw)
+			? raw
+			: raw
+					.split(",")
+					.map((v) => Number(v.trim()))
+					.filter((v) => !Number.isNaN(v));
+		onSeriesChange(
+			series.map((s, i) => (i === idx ? { ...s, values: next } : s)),
+		);
+	};
+
+	const handleCategoriesChange = (raw: string) => {
+		// Keep as a variable reference string; otherwise split into an array.
+		const next: string[] | string = isVarRef(raw)
+			? raw
+			: raw
+					.split(",")
+					.map((v) => v.trim())
+					.filter(Boolean);
+		onCategoriesChange(next);
+	};
+
+	return (
+		<div className="flex flex-col gap-2">
+			<div className="flex flex-col gap-1">
+				<span className="text-[11px] text-muted-foreground">
+					Categories{" "}
+					{!categoriesIsRef && (
+						<span className="opacity-60">(comma-separated)</span>
+					)}
+				</span>
+				<BoundInput
+					label=""
+					value={categoriesToString(categories)}
+					placeholder="Q1, Q2, Q3, Q4 or ${variable}"
+					onChange={handleCategoriesChange}
+					upstreamVars={upstreamVars}
+					readOnly={readOnly}
+				/>
+			</div>
+
+			<div className="flex flex-col gap-1.5">
+				<span className="text-[11px] text-muted-foreground">
+					Series
+				</span>
+				{series.map((s, idx) => (
+					<div
+						key={seriesKeysRef.current[idx]}
+						className="flex flex-col gap-1 rounded border bg-background p-2"
+					>
+						<div className="flex items-center gap-1.5">
+							<Input
+								className="h-7 flex-1 text-xs"
+								value={s.name}
+								placeholder="Series name"
+								disabled={readOnly}
+								onChange={(e) =>
+									updateSeriesName(idx, e.target.value)
+								}
+							/>
+							{!readOnly && (
+								<button
+									type="button"
+									className="text-muted-foreground transition-colors hover:text-destructive"
+									onClick={() => removeSeries(idx)}
+								>
+									<Trash2 className="h-3.5 w-3.5" />
+								</button>
+							)}
+						</div>
+						<BoundInput
+							label=""
+							value={valuesToString(s.values)}
+							placeholder="5.1, 5.8, 6.9, 7.7 or ${variable}"
+							onChange={(raw) => updateSeriesValues(idx, raw)}
+							upstreamVars={upstreamVars}
+							readOnly={readOnly}
+						/>
+					</div>
+				))}
+				{!readOnly && (
+					<Button
+						variant="outline"
+						size="sm"
+						className="h-7 self-start text-xs"
+						onClick={addSeries}
+					>
+						<Plus className="mr-1 h-3 w-3" />
+						Add series
+					</Button>
+				)}
+			</div>
+		</div>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Main form
+// ---------------------------------------------------------------------------
+
+export function TemplatePptxForm({
+	config,
+	upstreamVars,
+	onChange,
+	appId = "",
+	readOnly = false,
+}: TemplatePptxFormProps) {
+	const { shapeSelection, onPickShapes, runInsightId } =
+		useContext(PptxPickContext);
+	const [pickMode, setPickMode] = useState(false);
+	const pickModeRef = useRef(pickMode);
+	pickModeRef.current = pickMode;
+
+	const configRef = useRef(config);
+	configRef.current = config;
+	const onChangeRef = useRef(onChange);
+	onChangeRef.current = onChange;
+
+	useEffect(() => {
+		if (!shapeSelection || !pickModeRef.current || readOnly) return;
+		const { shapeName, shapeType } = shapeSelection;
+		const c = configRef.current;
+		if (c.replacements.some((r) => r.shapeName === shapeName)) return;
+		onChangeRef.current({
+			...c,
+			replacements: [
+				...c.replacements,
+				makeDefaultReplacement(
+					shapeName,
+					deriveReplacementType(shapeType),
+				),
+			],
+		});
+	}, [shapeSelection, readOnly]);
+
+	const handlePickToggle = () => {
+		if (!pickMode) onPickShapes?.(config.templateFile);
+		setPickMode(!pickMode);
+	};
+
+	const changeType = (
+		index: number,
+		type: TemplatePptxReplacement["type"],
+	) => {
+		if (readOnly) return;
+		const next = config.replacements.map((existing, i) =>
+			i === index
+				? makeDefaultReplacement(existing.shapeName, type)
+				: existing,
+		);
+		onChange({ ...config, replacements: next });
+	};
+
+	const updateValue = (index: number, value: string) => {
+		if (readOnly) return;
+		const next = config.replacements.map((r, i) =>
+			i === index && (r.type === "text" || r.type === "image")
+				? { ...r, value }
+				: r,
+		);
+		onChange({ ...config, replacements: next });
+	};
+
+	const updateChartCategories = (
+		index: number,
+		categories: string[] | string,
+	) => {
+		if (readOnly) return;
+		const next = config.replacements.map((r, i) =>
+			i === index && r.type === "chart" ? { ...r, categories } : r,
+		);
+		onChange({ ...config, replacements: next });
+	};
+
+	const updateChartSeries = (index: number, series: PptxChartSeries[]) => {
+		if (readOnly) return;
+		const next = config.replacements.map((r, i) =>
+			i === index && r.type === "chart" ? { ...r, series } : r,
+		);
+		onChange({ ...config, replacements: next });
+	};
+
+	const removeReplacement = (index: number) => {
+		if (readOnly) return;
+		onChange({
+			...config,
+			replacements: config.replacements.filter((_, i) => i !== index),
+		});
+	};
+
+	const pixelPreview = buildPixelPreview(config);
+
+	return (
+		<div className="flex flex-col gap-4">
+			<PptxTemplateSelect
+				value={config.templateFile}
+				appId={appId}
+				runInsightId={runInsightId}
+				onChange={(templateFile) =>
+					onChange({ ...config, templateFile })
+				}
+				disabled={readOnly}
+			/>
+
+			<BoundInput
+				label="Output File Name"
+				value={config.outputFileName ?? ""}
+				placeholder="output"
+				description="Name for the generated file, without extension. .pptx and a timestamp are added automatically."
+				onChange={(v) =>
+					onChange({ ...config, outputFileName: v || undefined })
+				}
+				upstreamVars={upstreamVars}
+				readOnly={readOnly}
+			/>
+
+			<Field>
+				<FieldLabel>Shape Replacements</FieldLabel>
+				<FieldDescription>
+					Click <strong>Pick Shapes</strong> to open the template and
+					select shapes to configure.
+				</FieldDescription>
+
+				{!readOnly && (
+					<Button
+						variant={pickMode ? "default" : "outline"}
+						size="sm"
+						className="mt-1 flex items-center gap-1.5 self-start text-xs"
+						onClick={handlePickToggle}
+					>
+						<MousePointerClick className="h-3.5 w-3.5" />
+						{pickMode ? "Picking — click a shape" : "Pick Shapes"}
+					</Button>
+				)}
+
+				{config.replacements.length === 0 ? (
+					<p className="mt-2 text-[11px] text-muted-foreground">
+						No shapes selected. Use Pick Shapes to add replacements.
+					</p>
+				) : (
+					<div className="mt-2 flex flex-col gap-3">
+						{config.replacements.map((r, i) => (
+							<div
+								key={r.shapeName}
+								className="rounded-lg border bg-muted/30 p-3"
+							>
+								<div className="mb-2 flex items-center justify-between">
+									<span className="font-mono text-[11px] text-foreground">
+										{r.shapeName}
+									</span>
+									{!readOnly && (
+										<button
+											type="button"
+											className="text-muted-foreground transition-colors hover:text-destructive"
+											onClick={() => removeReplacement(i)}
+										>
+											<Trash2 className="h-3.5 w-3.5" />
+										</button>
+									)}
+								</div>
+
+								<div className="flex flex-col gap-2">
+									<div className="flex items-center gap-2">
+										<span className="w-10 shrink-0 text-[11px] text-muted-foreground">
+											Type
+										</span>
+										<Select
+											value={r.type}
+											onValueChange={(v: string) =>
+												changeType(
+													i,
+													v as TemplatePptxReplacement["type"],
+												)
+											}
+											disabled={readOnly}
+										>
+											<SelectTrigger className="h-7 text-xs">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="text">
+													Text
+												</SelectItem>
+												<SelectItem value="image">
+													Image
+												</SelectItem>
+												<SelectItem value="chart">
+													Chart
+												</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+
+									{r.type === "chart" ? (
+										<ChartEditor
+											categories={r.categories}
+											series={r.series}
+											readOnly={readOnly}
+											upstreamVars={upstreamVars}
+											onCategoriesChange={(cats) =>
+												updateChartCategories(i, cats)
+											}
+											onSeriesChange={(s) =>
+												updateChartSeries(i, s)
+											}
+										/>
+									) : (
+										<BoundInput
+											label="Value"
+											value={r.value}
+											placeholder={
+												r.type === "image"
+													? "path/to/image.png"
+													: "Replacement text"
+											}
+											onChange={(v) => updateValue(i, v)}
+											upstreamVars={upstreamVars}
+											readOnly={readOnly}
+										/>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
+				)}
+			</Field>
+
+			{pixelPreview && (
+				<div className="rounded-lg border bg-muted/30 px-3 py-2">
+					<p className="mb-1 font-medium text-[10px] text-muted-foreground uppercase tracking-wide">
+						Generated Pixel
+					</p>
+					<pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-[10px] text-foreground/70">
+						{pixelPreview}
+					</pre>
+				</div>
+			)}
+		</div>
+	);
+}

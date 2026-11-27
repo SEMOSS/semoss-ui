@@ -35,6 +35,7 @@ export type {
 	FileViewControls,
 	FileViewMode,
 	FileViewProps,
+	PptxShapeSelectedPayload,
 } from "./types/file-view.types";
 export {
 	getCodeEditorLanguage,

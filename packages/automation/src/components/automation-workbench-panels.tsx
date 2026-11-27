@@ -1,13 +1,18 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useMemo } from "react";
 import type {
 	AutomationNodeTrace,
 	AutomationRunDetail,
 	AutomationRunSummary,
 } from "../domain/automation.types";
 import type { AutomationInspectorSnapshot } from "../domain/automation-inspector";
+import { getVisibleRun } from "../domain/automation-visible-run";
 import type { N8nImportConversionModel } from "../domain/n8n-import-adapter";
 import type { AutomationCanvasHandle } from "./canvas-editor/automation-canvas";
 import { AutomationCanvas } from "./canvas-editor/automation-canvas-loader";
+import {
+	PptxPickContext,
+	type PptxShapeSelection,
+} from "./canvas-editor/pptx-pick-context";
 import { InspectorTab } from "./canvas-editor/tabs/inspector-tab";
 import {
 	type AutomationTraceSnapshot,
@@ -44,6 +49,12 @@ export interface AutomationWorkbenchContextValue {
 	 * so re-focusing the same node (after navigating away) still takes effect. */
 	runDetailsFocusNodeId: string | null;
 	runDetailsFocusToken: number;
+	/** Set by the host when a shape is selected in an open PPTX panel. The
+	 *  TemplatePptxForm uses this to add replacements when pick mode is active. */
+	pptxShapeSelection: PptxShapeSelection | null;
+	/** Opens a TemplatePPTX step's template in a PPTX panel and focuses the inspector, so
+	 *  shapes can be picked from it. */
+	onPickShapes: (templateFile: string) => void;
 }
 
 export const AutomationWorkbenchContext =
@@ -79,65 +90,79 @@ export const AutomationEditorPanel = () => {
 export const AutomationInspectorPanel = () => {
 	const context = useAutomationWorkbenchContext();
 	const snapshot = context.inspectorSnapshot;
+	const { pptxShapeSelection, onPickShapes } = context;
+	const runInsightId =
+		getVisibleRun(context.traceSnapshot, context.selectedRun)
+			?.executionInsightId ?? undefined;
+	const pptxPick = useMemo(
+		() => ({
+			shapeSelection: pptxShapeSelection,
+			onPickShapes,
+			runInsightId,
+		}),
+		[pptxShapeSelection, onPickShapes, runInsightId],
+	);
 	return (
-		<InspectorTab
-			appId={context.appId}
-			description={snapshot?.description ?? ""}
-			devMode={snapshot?.devMode ?? false}
-			editingStep={snapshot?.editingStep ?? null}
-			editingNodeGroup={snapshot?.editingNodeGroup ?? null}
-			onPrepareSchedule={() =>
-				context.canvasRef.current?.prepareSchedule() ??
-				Promise.resolve(false)
-			}
-			upstreamVars={snapshot?.upstreamVars ?? []}
-			scopeEntries={snapshot?.scopeEntries ?? []}
-			stepRunStatus={snapshot?.stepRunStatus}
-			stepRunError={snapshot?.stepRunError}
-			readOnly={context.readOnly || Boolean(snapshot?.readOnly)}
-			onDescriptionChange={(description) =>
-				context.canvasRef.current?.applyInspectorAction({
-					type: "update-description",
-					description,
-				})
-			}
-			onClose={() =>
-				context.canvasRef.current?.applyInspectorAction({
-					type: "close",
-				})
-			}
-			onUpdate={(step) =>
-				context.canvasRef.current?.applyInspectorAction({
-					type: "update-step",
-					step,
-				})
-			}
-			onDelete={(stepId) =>
-				context.canvasRef.current?.applyInspectorAction({
-					type: "delete-step",
-					stepId,
-				})
-			}
-			onUpdateNodeGroup={(group) =>
-				context.canvasRef.current?.applyInspectorAction({
-					type: "update-node-group",
-					group,
-				})
-			}
-			onUngroupNodeGroup={(groupId) =>
-				context.canvasRef.current?.applyInspectorAction({
-					type: "delete-node-group",
-					groupId,
-				})
-			}
-			onOpenPythonEditor={context.onOpenPythonEditor}
-			pythonFileOpen={
-				snapshot?.editingStep
-					? context.isPythonFileOpen(snapshot.editingStep.id)
-					: false
-			}
-			onViewRunDetails={context.onViewRunDetails}
-		/>
+		<PptxPickContext.Provider value={pptxPick}>
+			<InspectorTab
+				appId={context.appId}
+				description={snapshot?.description ?? ""}
+				devMode={snapshot?.devMode ?? false}
+				editingStep={snapshot?.editingStep ?? null}
+				editingNodeGroup={snapshot?.editingNodeGroup ?? null}
+				onPrepareSchedule={() =>
+					context.canvasRef.current?.prepareSchedule() ??
+					Promise.resolve(false)
+				}
+				upstreamVars={snapshot?.upstreamVars ?? []}
+				scopeEntries={snapshot?.scopeEntries ?? []}
+				stepRunStatus={snapshot?.stepRunStatus}
+				stepRunError={snapshot?.stepRunError}
+				readOnly={context.readOnly || Boolean(snapshot?.readOnly)}
+				onDescriptionChange={(description) =>
+					context.canvasRef.current?.applyInspectorAction({
+						type: "update-description",
+						description,
+					})
+				}
+				onClose={() =>
+					context.canvasRef.current?.applyInspectorAction({
+						type: "close",
+					})
+				}
+				onUpdate={(step) =>
+					context.canvasRef.current?.applyInspectorAction({
+						type: "update-step",
+						step,
+					})
+				}
+				onDelete={(stepId) =>
+					context.canvasRef.current?.applyInspectorAction({
+						type: "delete-step",
+						stepId,
+					})
+				}
+				onUpdateNodeGroup={(group) =>
+					context.canvasRef.current?.applyInspectorAction({
+						type: "update-node-group",
+						group,
+					})
+				}
+				onUngroupNodeGroup={(groupId) =>
+					context.canvasRef.current?.applyInspectorAction({
+						type: "delete-node-group",
+						groupId,
+					})
+				}
+				onOpenPythonEditor={context.onOpenPythonEditor}
+				pythonFileOpen={
+					snapshot?.editingStep
+						? context.isPythonFileOpen(snapshot.editingStep.id)
+						: false
+				}
+				onViewRunDetails={context.onViewRunDetails}
+			/>
+		</PptxPickContext.Provider>
 	);
 };
 
